@@ -322,6 +322,51 @@
     .modal .closeRow{ display:flex; justify-content:flex-end; gap:10px; margin-top:10px; }
 
     footer{margin-top:18px;font-size:12px;color:var(--muted);text-align:center}
+
+    /* =========================================================
+       ✅ 追加：スマホで見やすく＆ズレにくくするCSS（追記分）
+       ========================================================= */
+    @media (max-width: 520px){
+      .wrap{ padding: 0 8px; }                 /* 画面端を有効活用 */
+      .card{ padding: 10px; border-radius: 12px; }
+      h1{ font-size: 16px; }
+      p{ font-size: 12px; }
+
+      label{ min-width: 100%; }               /* 入力欄を縦並びに */
+      .btnrow{ gap: 8px; }
+      button{ width: 100%; }                  /* ボタンは押しやすく縦並び */
+      button.help{ margin-left: 0; }          /* 右寄せ解除 */
+
+      .tablewrap{
+        border-radius: 12px;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        scrollbar-gutter: stable both-edges;
+        transform: translateZ(0);             /* iOS Safariの描画ブレ対策 */
+      }
+
+      table{
+        min-width: 520px;                     /* 横スクロール前提、少し詰める */
+      }
+
+      /* sticky列・見出しの描画を安定させる */
+      th, td, th.sticky-left, td.sticky-left{
+        background-clip: padding-box;
+        backface-visibility: hidden;
+        transform: translateZ(0);
+      }
+
+      /* セルの情報量を増やす（ズレ防止＋見やすさ） */
+      th, td{ height: 40px; }
+      .cell{ height: 40px; padding: 3px 4px; }
+      .cell .pct{ font-size: 11px; }
+      .cell .sub{ display:none; }
+    }
+
+    @media (min-width: 521px) and (max-width: 900px){
+      .wrap{ padding: 0 10px; }
+      table{ min-width: 600px; }
+    }
   </style>
 </head>
 
