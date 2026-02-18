@@ -1,0 +1,1012 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>新築マンション抽選：当選しやすさマトリクス（やさしい版）</title>
+  <style>
+    :root{
+      --bg:#0b0c10;
+      --card:#11131a;
+      --muted:#a8b0c3;
+      --text:#e9ecf5;
+      --border:#2a2f3d;
+      --key:#fff2cc;
+      --ink:#0b0c10;
+      --accent:#dbe2ff;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      background: radial-gradient(1200px 800px at 10% 10%, #13162a, var(--bg));
+      color:var(--text);
+    }
+    .wrap{max-width:1180px;margin:18px auto;padding:0 12px}
+    h1{font-size:18px;margin:0 0 6px}
+    p{margin:6px 0;color:var(--muted);line-height:1.6;font-size:13px}
+
+    .grid{display:grid;grid-template-columns: 400px 1fr;gap:14px;align-items:start}
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background:linear-gradient(180deg, #121522, var(--card));
+      border:1px solid var(--border);
+      border-radius:14px;
+      padding:12px;
+      box-shadow: 0 14px 30px rgba(0,0,0,.35);
+    }
+
+    .guide{
+      border:1px solid rgba(219,226,255,.18);
+      background: rgba(219,226,255,.06);
+      border-radius:12px;
+      padding:10px 12px;
+      color:#dbe2ff;
+      font-size:12px;
+      line-height:1.6;
+      margin-top:10px;
+    }
+    .guide b{color:#fff}
+
+    .row{display:flex;gap:10px;flex-wrap:wrap}
+    label{display:flex;flex-direction:column;gap:6px;font-size:12px;color:var(--muted);flex:1;min-width:140px}
+    input{
+      width:100%;
+      padding:10px 10px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#0f1118;
+      color:var(--text);
+      outline:none;
+      font-size:14px;
+    }
+    input.key{background: #2a2415;border-color:#52441f;}
+
+    .hint{
+      font-size:12px;
+      color: var(--muted);
+      margin-top:4px;
+      min-height: 16px;
+    }
+
+    .btnrow{display:flex;gap:10px;margin-top:10px;flex-wrap:wrap}
+    button{
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid var(--border);
+      background:#161a2b;
+      color:var(--text);
+      cursor:pointer;
+      font-weight:600;
+    }
+    button:hover{filter:brightness(1.08)}
+    button.secondary{background:#0f1118}
+    button.help{
+      margin-left:auto;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+    }
+    .small{font-size:12px;color:var(--muted)}
+
+    .out{display:grid;grid-template-columns: 1fr 1fr;gap:10px;margin-top:12px}
+    @media (max-width: 520px){
+      .out{grid-template-columns:1fr}
+    }
+    .stat{
+      border:1px solid var(--border);
+      border-radius:12px;
+      padding:10px;
+      background:#0f1118;
+    }
+    .stat .k{font-size:12px;color:var(--muted)}
+    .stat .v{font-size:18px;font-weight:800;margin-top:4px}
+
+    .legend{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+    .chip{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted)}
+    .sw{width:14px;height:14px;border-radius:4px;border:1px solid rgba(255,255,255,.15)}
+
+    /* ====== TABLE / MOBILE ====== */
+    .tablewrap{
+      overflow:auto;
+      border-radius:12px;
+      border:1px solid var(--border);
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* セル幅固定の肝：table-layout:fixed + colgroup */
+    table{
+      border-collapse:separate;
+      border-spacing:0;
+      width:100%;
+      table-layout: fixed;
+      min-width: 620px; /* スマホは横スクロール前提 */
+      font-variant-numeric: tabular-nums;
+    }
+
+    th, td{
+      border-bottom:1px solid var(--border);
+      border-right:1px solid var(--border);
+      text-align:center;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      height: 44px; /* 高さ固定で見やすく */
+      padding: 0;
+    }
+    th{
+      position:sticky;
+      top:0;
+      background:#101426;
+      z-index:2;
+      font-size:12px;
+    }
+    th.sticky-left{position:sticky;left:0;z-index:3;background:#101426}
+    td.sticky-left{position:sticky;left:0;background:#0f1118;z-index:1;font-weight:700;font-size:12px}
+
+    tr:last-child td{border-bottom:none}
+    tr td:last-child, tr th:last-child{border-right:none}
+
+    /* セルの中身は固定レイアウトのブロックにする（文字量で幅が変わらない） */
+    .cell{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:2px;
+      width:100%;
+      height:44px;
+      padding:4px 6px;
+      font-weight:800;
+      color:#0b0c10;
+    }
+    .cell .pct{font-size:12px;line-height:1}
+    .cell .sub{
+      font-size:10px;
+      line-height:1;
+      font-weight:700;
+      opacity:.9;
+    }
+    /* スマホではサブ行を省略しても見やすい */
+    @media (max-width: 520px){
+      .cell{height:42px}
+      .cell .sub{display:none}
+      table{min-width: 560px;}
+    }
+
+    .note{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:#0f1118;
+      border:1px solid var(--border);
+      color:var(--muted);
+      font-size:12px;
+      line-height:1.6;
+    }
+
+    .err{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background: rgba(248,105,107,.08);
+      border:1px solid rgba(248,105,107,.35);
+      color:#ffd9da;
+      font-size:12px;
+      line-height:1.6;
+      display:none;
+    }
+    .okmsg{
+      margin-top:10px;
+      padding:10px 12px;
+      border-radius:12px;
+      background: rgba(99,190,123,.08);
+      border:1px solid rgba(99,190,123,.35);
+      color:#d8ffe0;
+      font-size:12px;
+      line-height:1.6;
+      display:none;
+    }
+
+    /* 不可能領域（斜線だけ） */
+    .impossible{
+      background:
+        repeating-linear-gradient(
+          45deg,
+          rgba(255,255,255,.06) 0px,
+          rgba(255,255,255,.06) 6px,
+          rgba(15,17,24,1) 6px,
+          rgba(15,17,24,1) 12px
+        ) !important;
+      color: transparent !important;
+      user-select:none;
+    }
+
+    /* ベストセル強調 */
+    .best{
+      outline: 3px solid rgba(255,255,255,.85);
+      outline-offset: -3px;
+      position:relative;
+    }
+    .best::after{
+      content:"★";
+      position:absolute;
+      top:4px; right:6px;
+      font-size:12px;
+      color: var(--ink);
+      opacity:.9;
+    }
+
+    /* 選択セル */
+    .selected{
+      outline: 3px solid rgba(255,255,255,.65);
+      outline-offset: -3px;
+      box-shadow: 0 0 0 2px rgba(0,0,0,.15) inset;
+    }
+
+    .panelTitle{
+      font-size:13px;
+      font-weight:800;
+      margin:14px 0 8px;
+      color:var(--accent);
+    }
+    .list{
+      border:1px solid var(--border);
+      border-radius:12px;
+      background:#0f1118;
+      overflow:hidden;
+    }
+    .item{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:10px 10px;
+      border-top:1px solid var(--border);
+      font-size:12px;
+      color:var(--text);
+    }
+    .item:first-child{border-top:none}
+    .item .muted{color:var(--muted)}
+    .pill{
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding:2px 8px;
+      border-radius:999px;
+      font-size:11px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .kpiRow{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:10px;
+    }
+    .tag{
+      display:inline-flex;
+      gap:6px;
+      align-items:center;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      padding:6px 10px;
+      border-radius:999px;
+      font-size:12px;
+      color:var(--text);
+    }
+    .tag b{font-weight:900}
+
+    /* modal */
+    .modal-backdrop{
+      position:fixed; inset:0;
+      background: rgba(0,0,0,.55);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:50;
+    }
+    .modal{
+      width:min(720px, 100%);
+      background: linear-gradient(180deg, #121522, #0f1118);
+      border:1px solid var(--border);
+      border-radius:14px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.6);
+      padding:14px;
+    }
+    .modal h2{ margin:0 0 6px; font-size:16px; }
+    .modal p, .modal li{ color:var(--muted); font-size:13px; line-height:1.7; }
+    .modal .closeRow{ display:flex; justify-content:flex-end; gap:10px; margin-top:10px; }
+
+    footer{margin-top:18px;font-size:12px;color:var(--muted);text-align:center}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>新築マンション抽選：当選しやすさマトリクス（やさしい版）</h1>
+    <p>
+      <b>N回</b>申し込むとして、<b>「2倍に何回」「3倍に何回」「5倍に何回」</b>のように配分したとき、<br/>
+      <b>1回でも当たる確率</b>を色で見える化した表です。<b>緑ほど当たりやすく</b>、<b>★が一番当たりやすい配分</b>です。
+    </p>
+
+    <div class="grid">
+      <div class="card">
+        <div class="guide">
+          <b>見方（これだけ）</b><br/>
+          ① 色：緑ほど「当たりやすい」<br/>
+          ② ★：いちばん当たりやすい配分（※「1回でも当たる確率」を最大にする基準で固定）<br/>
+          ③ クリック：内訳（外れる確率など）を表示
+        </div>
+
+        <div class="row" style="margin-top:12px">
+          <div class="small" style="padding:10px 12px;border:1px solid var(--border);border-radius:12px;background:#0f1118;flex:1">
+            <b>おすすめの基準：</b>とにかく1回当てたい（1回以上当選が最大） ※固定
+          </div>
+          <button id="help" class="help secondary" title="使い方">？ 使い方</button>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <label>総参加回数 N（0〜30）
+            <input id="N" type="number" min="0" max="30" step="1" value="3" class="key" />
+          </label>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <label>
+            倍率A（整数）
+            <input id="A" type="number" min="1" step="1" value="2" class="key" inputmode="numeric" />
+            <div class="hint" id="Ahint">2倍（50.0%）</div>
+          </label>
+          <label>
+            倍率B（整数）
+            <input id="B" type="number" min="1" step="1" value="3" class="key" inputmode="numeric" />
+            <div class="hint" id="Bhint">3倍（33.3%）</div>
+          </label>
+          <label>
+            倍率C（残り）（整数）
+            <input id="C" type="number" min="1" step="1" value="5" class="key" inputmode="numeric" />
+            <div class="hint" id="Chint">5倍（20.0%）</div>
+          </label>
+        </div>
+
+        <div class="btnrow">
+          <button id="example">例を入れる</button>
+          <button id="copyLink" class="secondary">リンクをコピー</button>
+          <button id="save" class="secondary">保存</button>
+          <button id="reset" class="secondary">リセット</button>
+        </div>
+
+        <div id="err" class="err"></div>
+        <div id="ok" class="okmsg"></div>
+
+        <div class="panelTitle">今の見どころ（初心者向け）</div>
+        <div class="kpiRow" id="kpiRow"></div>
+
+        <div class="out">
+          <div class="stat">
+            <div class="k">例セル（a=1, b=1）</div>
+            <div class="v" id="exCell">—</div>
+          </div>
+          <div class="stat">
+            <div class="k">全部C（a=0, b=0）</div>
+            <div class="v" id="allC">—</div>
+          </div>
+        </div>
+
+        <div class="out">
+          <div class="stat">
+            <div class="k">全部外れる確率（全落ち）</div>
+            <div class="v" id="allLose">—</div>
+          </div>
+          <div class="stat">
+            <div class="k">平均すると当たる回数（独立の仮定）</div>
+            <div class="v" id="expWins">—</div>
+          </div>
+        </div>
+
+        <div class="legend">
+          <div class="chip"><span class="sw" style="background:#F8696B"></span>当たりにくい</div>
+          <div class="chip"><span class="sw" style="background:#FFEB84"></span>ふつう</div>
+          <div class="chip"><span class="sw" style="background:#63BE7B"></span>当たりやすい</div>
+        </div>
+
+        <div class="panelTitle">おすすめ配分（上位3つ）</div>
+        <div id="top3" class="list"></div>
+
+        <div class="panelTitle">選択セルの内訳（わかりやすく）</div>
+        <div id="detail" class="note">
+          表のセルをクリックすると、ここに内訳を表示します。
+        </div>
+
+        <div class="note">
+          <b>用語をやさしく：</b><br/>
+          ・<b>1回でも当たる確率</b>：N回のうち、どこかで1回でも当たる確率<br/>
+          ・<b>全部外れる確率（全落ち）</b>：N回すべて外れる確率（= 1回でも当たる確率 の反対）<br/>
+          ・<b>平均すると当たる回数</b>：長く繰り返したときの「当たり回数の平均」（0回のときもあります）<br/>
+          ※ 本ツールは参考情報であり、実際の抽選結果を保証するものではありません。
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="tablewrap">
+          <table id="tbl" aria-label="当選確率マトリクス"></table>
+        </div>
+        <div class="btnrow" style="margin-top:12px">
+          <button id="csv" class="secondary">CSV出力</button>
+        </div>
+        <div class="small" style="margin-top:8px">
+          ※ 表は <b>a+b≤N</b>（成立する配分）だけを表示。表示範囲は N に合わせて自動調整されます。
+        </div>
+      </div>
+    </div>
+
+    <footer>© 2026 こぺる（@Coperu100）. All rights reserved.</footer>
+  </div>
+
+  <!-- Help Modal -->
+  <div id="backdrop" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+    <div class="modal">
+      <h2 id="helpTitle">使い方（30秒）</h2>
+      <ul>
+        <li><b>N</b>：申し込む回数です。</li>
+        <li><b>倍率</b>：2倍なら当たる確率はだいたい<b>50%</b>（= 1/2）という前提で計算しています。</li>
+        <li>表の数字は<b>「1回でも当たる確率」</b>。緑ほど当たりやすいです。</li>
+        <li><b>★</b>は、<b>「1回でも当たる確率」が一番高い配分</b>（この基準で固定）です。</li>
+        <li>セルをクリックすると、<b>全部外れる確率</b>や<b>平均すると当たる回数</b>が見られます。</li>
+      </ul>
+      <p>※ 優先枠・複数口などは反映していません。あくまで目安です。</p>
+      <div class="closeRow">
+        <button id="closeHelp" class="secondary">閉じる</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const LS_KEY = "lottery_matrix_mobile_fixedcells_v1";
+
+    function clamp(x, lo, hi){ return Math.max(lo, Math.min(hi, x)); }
+    function asInt(v, fallback){
+      const n = parseInt(String(v ?? ""), 10);
+      return Number.isFinite(n) ? n : fallback;
+    }
+
+    function winProb(N, A, B, C, a, b){
+      const c = N - a - b;
+      if (c < 0) return null;
+      const q = (m)=> (m <= 1 ? 0 : (m-1)/m);
+      const lose = Math.pow(q(A), a) * Math.pow(q(B), b) * Math.pow(q(C), c);
+      return 1 - lose;
+    }
+
+    function expWins(N, A, B, C, a, b){
+      const c = N - a - b;
+      if (c < 0) return null;
+      const p = (m)=> (m <= 1 ? 1 : 1/m);
+      return a*p(A) + b*p(B) + c*p(C);
+    }
+
+    function fmtPct(x){
+      if (x === null || Number.isNaN(x)) return "";
+      return (x*100).toFixed(1) + "%";
+    }
+    function fmtNum(x){
+      if (x === null || Number.isNaN(x)) return "";
+      return x.toFixed(2);
+    }
+
+    // Excel-ish: red -> yellow -> green
+    function lerp(a,b,t){ return a + (b-a)*t; }
+    function hexToRgb(hex){
+      const h = hex.replace("#","").trim();
+      return { r: parseInt(h.substring(0,2),16), g: parseInt(h.substring(2,4),16), b: parseInt(h.substring(4,6),16) };
+    }
+    function rgbToHex(r,g,b){
+      const toH = (v)=> v.toString(16).padStart(2,"0");
+      return "#" + toH(r) + toH(g) + toH(b);
+    }
+    function colorScale(t){
+      const red = hexToRgb("#F8696B");
+      const yel = hexToRgb("#FFEB84");
+      const grn = hexToRgb("#63BE7B");
+      t = clamp(t, 0, 1);
+
+      if (t < 0.5){
+        const tt = t/0.5;
+        return rgbToHex(
+          Math.round(lerp(red.r, yel.r, tt)),
+          Math.round(lerp(red.g, yel.g, tt)),
+          Math.round(lerp(red.b, yel.b, tt))
+        );
+      } else {
+        const tt = (t-0.5)/0.5;
+        return rgbToHex(
+          Math.round(lerp(yel.r, grn.r, tt)),
+          Math.round(lerp(yel.g, grn.g, tt)),
+          Math.round(lerp(yel.b, grn.b, tt))
+        );
+      }
+    }
+
+    function showErr(msg){
+      const el = $("err");
+      el.textContent = msg;
+      el.style.display = msg ? "block" : "none";
+    }
+    function showOk(msg){
+      const el = $("ok");
+      el.textContent = msg;
+      el.style.display = msg ? "block" : "none";
+      if (msg) setTimeout(()=>{ el.style.display="none"; }, 1200);
+    }
+
+    function multHint(m){
+      const p = (m <= 1) ? 100 : (100 / m);
+      return `${m}倍（${p.toFixed(1)}%）`;
+    }
+
+    function syncMultiplierHints(){
+      const A = asInt($("A").value, 2);
+      const B = asInt($("B").value, 3);
+      const C = asInt($("C").value, 5);
+      $("Ahint").textContent = multHint(Math.max(1, A));
+      $("Bhint").textContent = multHint(Math.max(1, B));
+      $("Chint").textContent = multHint(Math.max(1, C));
+    }
+
+    function normalizeIntegerInputs(){
+      ["A","B","C"].forEach(id=>{
+        const el = $(id);
+        let v = asInt(el.value, NaN);
+        if (!Number.isFinite(v)) return;
+        v = Math.max(1, v);
+        if (String(el.value) !== String(v)) el.value = v;
+      });
+    }
+
+    function getStateFromInputs(){
+      let N = asInt($("N").value, 3);
+      let A = asInt($("A").value, 2);
+      let B = asInt($("B").value, 3);
+      let C = asInt($("C").value, 5);
+
+      N = clamp(N, 0, 30);
+      A = Math.max(1, A);
+      B = Math.max(1, B);
+      C = Math.max(1, C);
+
+      return { N, A, B, C };
+    }
+
+    function validateState(s){
+      if (!(s.A >= 1) || !(s.B >= 1) || !(s.C >= 1)){
+        return "倍率は 1 以上の整数で入力してください（例：2, 3, 5。1は確定当選として扱います）。";
+      }
+      if (!Number.isInteger(s.A) || !Number.isInteger(s.B) || !Number.isInteger(s.C)){
+        return "倍率は整数のみ対応です（小数は使えません）。";
+      }
+      if (s.N < 0 || s.N > 30) return "N は 0〜30 の範囲で入力してください。";
+      return "";
+    }
+
+    function stateToQuery(s){
+      const p = new URLSearchParams();
+      p.set("N", s.N);
+      p.set("A", s.A);
+      p.set("B", s.B);
+      p.set("C", s.C);
+      return p.toString();
+    }
+
+    function applyStateToInputs(s){
+      $("N").value = s.N;
+      $("A").value = s.A;
+      $("B").value = s.B;
+      $("C").value = s.C;
+      syncMultiplierHints();
+    }
+
+    function loadState(){
+      const q = new URLSearchParams(location.search);
+      const hasAny = ["N","A","B","C"].some(k => q.has(k));
+      if (hasAny){
+        return {
+          N: clamp(asInt(q.get("N") ?? "3", 3), 0, 30),
+          A: Math.max(1, asInt(q.get("A") ?? "2", 2)),
+          B: Math.max(1, asInt(q.get("B") ?? "3", 3)),
+          C: Math.max(1, asInt(q.get("C") ?? "5", 5)),
+        };
+      }
+      try{
+        const raw = localStorage.getItem(LS_KEY);
+        if (raw){
+          const s = JSON.parse(raw);
+          return {
+            N: clamp(asInt(s.N, 3), 0, 30),
+            A: Math.max(1, asInt(s.A, 2)),
+            B: Math.max(1, asInt(s.B, 3)),
+            C: Math.max(1, asInt(s.C, 5)),
+          };
+        }
+      }catch(e){}
+      return { N:3, A:2, B:3, C:5 };
+    }
+
+    function approxInX(x){
+      const denominators = [3,4,5,6,8,10];
+      let best = { d:10, k:Math.round(x*10), err:Infinity };
+      for (const d of denominators){
+        const k = Math.round(x*d);
+        const err = Math.abs(x - k/d);
+        if (err < best.err){
+          best = { d, k, err };
+        }
+      }
+      const k = clamp(best.k, 0, best.d);
+      return `${best.d}回やると${k}回くらい`;
+    }
+    function feelLabel(p){
+      if (p >= 0.75) return "当たりやすい";
+      if (p >= 0.45) return "ふつう";
+      return "当たりにくい";
+    }
+
+    let selected = { a: null, b: null };
+
+    function render(){
+      normalizeIntegerInputs();
+      syncMultiplierHints();
+
+      const s = getStateFromInputs();
+      const err = validateState(s);
+      if (err){ showErr(err); return; }
+      showErr("");
+
+      const { N, A, B, C } = s;
+      const drawMax = N;
+
+      const cells = [];
+      for (let a=0; a<=drawMax; a++){
+        for (let b=0; b<=drawMax; b++){
+          const c = N - a - b;
+          if (c < 0) continue;
+          const p = winProb(N, A, B, C, a, b);
+          const loseAll = 1 - p;
+          const meanWins = expWins(N, A, B, C, a, b);
+          cells.push({ a, b, c, p, loseAll, meanWins });
+        }
+      }
+
+      const sorted = [...cells].sort((x,y)=> y.p - x.p);
+      const best = sorted[0] || null;
+      const top3 = sorted.slice(0,3);
+
+      const base = winProb(N, A, B, C, 0, 0);
+      $("exCell").textContent = fmtPct(winProb(N, A, B, C, 1, 1));
+      $("allC").textContent = fmtPct(base);
+      $("allLose").textContent = base === null ? "—" : fmtPct(1 - base);
+      $("expWins").textContent = fmtNum(expWins(N, A, B, C, 0, 0));
+
+      const kpi = $("kpiRow");
+      kpi.innerHTML = "";
+      if (best){
+        const tag1 = document.createElement("div");
+        tag1.className = "tag";
+        tag1.innerHTML = `★おすすめ：<b>当選 ${fmtPct(best.p)}</b>（${approxInX(best.p)} / ${feelLabel(best.p)}）`;
+        kpi.appendChild(tag1);
+
+        const tag2 = document.createElement("div");
+        tag2.className = "tag";
+        tag2.innerHTML = `外れる：<b>${fmtPct(best.loseAll)}</b>（${approxInX(best.loseAll)}）`;
+        kpi.appendChild(tag2);
+
+        const tag3 = document.createElement("div");
+        tag3.className = "tag";
+        tag3.innerHTML = `平均すると当たる回数：<b>${fmtNum(best.meanWins)}</b>`;
+        kpi.appendChild(tag3);
+      }
+
+      const topEl = $("top3");
+      topEl.innerHTML = "";
+      top3.forEach((x, i)=>{
+        const delta = (base !== null) ? (x.p - base) : null;
+        const line = document.createElement("div");
+        line.className = "item";
+        line.innerHTML = `
+          <div>
+            <div><b>${i+1}位</b> <span class="pill">A=${x.a}, B=${x.b}, C=${x.c}</span></div>
+            <div class="muted">当選 ${fmtPct(x.p)}（${approxInX(x.p)}） / 外れる ${fmtPct(x.loseAll)}</div>
+          </div>
+          <div style="text-align:right">
+            <div><b>当選：</b> ${fmtPct(x.p)}</div>
+            <div class="muted">${delta===null ? "" : (delta>=0?"+":"") + (delta*100).toFixed(1) + "pt vs 全部C"}</div>
+          </div>
+        `;
+        line.style.cursor = "pointer";
+        line.addEventListener("click", ()=>{
+          selected.a = x.a; selected.b = x.b;
+          render();
+        });
+        topEl.appendChild(line);
+      });
+
+      // ===== build table with fixed widths =====
+      const tbl = $("tbl");
+      tbl.innerHTML = "";
+
+      // colgroup：左1列 + (N+1)列を固定幅に
+      const colgroup = document.createElement("colgroup");
+      const colLeft = document.createElement("col");
+      colLeft.style.width = "140px";
+      colgroup.appendChild(colLeft);
+      for (let b=0; b<=drawMax; b++){
+        const col = document.createElement("col");
+        col.style.width = "96px";   // ★セル幅固定（値が変わっても動かない）
+        colgroup.appendChild(col);
+      }
+      tbl.appendChild(colgroup);
+
+      const trTop = document.createElement("tr");
+      const thCorner = document.createElement("th");
+      thCorner.className = "sticky-left";
+      thCorner.textContent = "A回数 \\ B回数";
+      trTop.appendChild(thCorner);
+      for (let b=0; b<=drawMax; b++){
+        const th = document.createElement("th");
+        th.textContent = b;
+        trTop.appendChild(th);
+      }
+      tbl.appendChild(trTop);
+
+      for (let a=0; a<=drawMax; a++){
+        const tr = document.createElement("tr");
+        const thA = document.createElement("td");
+        thA.className = "sticky-left";
+        thA.textContent = a;
+        tr.appendChild(thA);
+
+        for (let b=0; b<=drawMax; b++){
+          const td = document.createElement("td");
+          const c = N - a - b;
+          if (c < 0){
+            td.className = "impossible";
+            td.innerHTML = "&nbsp;";
+          } else {
+            const p = winProb(N, A, B, C, a, b);
+            const loseAll = 1 - p;
+            const meanWins = expWins(N, A, B, C, a, b);
+
+            td.style.background = colorScale(clamp(p,0,1));
+
+            const inner = document.createElement("div");
+            inner.className = "cell";
+            const pct = document.createElement("div");
+            pct.className = "pct";
+            pct.textContent = fmtPct(p);
+            const sub = document.createElement("div");
+            sub.className = "sub";
+            sub.textContent = approxInX(p);
+
+            inner.appendChild(pct);
+            inner.appendChild(sub);
+            td.appendChild(inner);
+
+            td.title =
+              `当選 ${fmtPct(p)}（${approxInX(p)} / ${feelLabel(p)}）\n` +
+              `外れる ${fmtPct(loseAll)}（${approxInX(loseAll)}）\n` +
+              `平均すると当たる回数 ${fmtNum(meanWins)}\n` +
+              `配分: A×${a}回, B×${b}回, C×${c}回`;
+
+            if (best && a === best.a && b === best.b) td.classList.add("best");
+            if (selected.a === a && selected.b === b) td.classList.add("selected");
+
+            td.style.cursor = "pointer";
+            td.addEventListener("click", ()=>{
+              selected.a = a; selected.b = b;
+              updateDetail(s, a, b, best);
+              render();
+            });
+          }
+          tr.appendChild(td);
+        }
+        tbl.appendChild(tr);
+      }
+
+      if (selected.a !== null && selected.b !== null && (N - selected.a - selected.b) >= 0){
+        updateDetail(s, selected.a, selected.b, best);
+      } else if (best){
+        updateDetail(s, best.a, best.b, best, true);
+      } else {
+        $("detail").innerHTML = "表のセルをクリックすると、ここに内訳を表示します。";
+      }
+    }
+
+    function updateDetail(s, a, b, best, isAuto=false){
+      const { N, A, B, C } = s;
+      const c = N - a - b;
+      const p = winProb(N, A, B, C, a, b);
+      const loseAll = 1 - p;
+      const meanWins = expWins(N, A, B, C, a, b);
+      const base = winProb(N, A, B, C, 0, 0);
+      const delta = (base !== null) ? (p - base) : null;
+
+      let vsBest = "";
+      if (best && (best.a !== a || best.b !== b)){
+        const dp = (p - best.p) * 100;
+        const dl = (loseAll - best.loseAll) * 100;
+        const dm = (meanWins - best.meanWins);
+        vsBest = `
+          <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+          <div style="color:var(--muted);font-size:12px;line-height:1.7">
+            <b>★おすすめと比べると：</b><br/>
+            ・当選：${dp>=0?"+":""}${dp.toFixed(1)}pt（★は${fmtPct(best.p)}）<br/>
+            ・外れる：${dl>=0?"+":""}${dl.toFixed(1)}pt（★は${fmtPct(best.loseAll)}）<br/>
+            ・平均すると当たる回数：${dm>=0?"+":""}${dm.toFixed(2)}（★は${fmtNum(best.meanWins)}）
+          </div>
+        `;
+      }
+
+      $("detail").innerHTML = `
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap">
+          <div>
+            <b>${isAuto ? "（参考）★おすすめの配分" : "選んだ配分"}</b>
+            <div style="margin-top:6px;color:var(--muted)">
+              A×${a}回 / B×${b}回 / C×${c}回（N=${N}）
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:18px;font-weight:900">当選 ${fmtPct(p)}</div>
+            <div style="color:var(--muted)">${delta===null ? "" : (delta>=0?"+":"") + (delta*100).toFixed(1) + "pt vs 全部C"}</div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;border:1px solid rgba(219,226,255,.18);background: rgba(219,226,255,.06);border-radius:12px;padding:10px 12px;color:#dbe2ff;font-size:12px;line-height:1.7">
+          <b>言い換えると：</b><br/>
+          ・当選：${approxInX(p)}（${feelLabel(p)}）<br/>
+          ・外れる：${approxInX(loseAll)}
+        </div>
+
+        <hr style="border:none;border-top:1px solid var(--border);margin:10px 0">
+        <div style="display:grid;grid-template-columns: 1fr 1fr;gap:10px">
+          <div>
+            <div style="color:var(--muted);font-size:12px">全部外れる確率（全落ち）</div>
+            <div style="font-weight:900;margin-top:4px">${fmtPct(loseAll)}</div>
+          </div>
+          <div>
+            <div style="color:var(--muted);font-size:12px">平均すると当たる回数</div>
+            <div style="font-weight:900;margin-top:4px">${fmtNum(meanWins)}</div>
+          </div>
+        </div>
+
+        <div style="margin-top:10px;color:var(--muted);font-size:12px;line-height:1.7">
+          ※「平均すると当たる回数」は<b>平均</b>なので、0回のときもあります。<br/>
+          ※ 優先枠・複数口などは反映していません。
+        </div>
+        ${vsBest}
+      `;
+    }
+
+    function debounce(fn, wait){
+      let t=null;
+      return (...args)=>{
+        clearTimeout(t);
+        t=setTimeout(()=>fn(...args), wait);
+      };
+    }
+    const renderDebounced = debounce(render, 120);
+
+    function saveToLocal(){
+      const s = getStateFromInputs();
+      const err = validateState(s);
+      if (err){ showErr(err); return; }
+      localStorage.setItem(LS_KEY, JSON.stringify(s));
+      showOk("保存しました。");
+    }
+
+    function resetAll(){
+      const s = { N:3, A:2, B:3, C:5 };
+      applyStateToInputs(s);
+      selected = { a:null, b:null };
+      history.replaceState(null, "", location.pathname);
+      showOk("リセットしました。");
+      render();
+    }
+
+    async function copyLink(){
+      const s = getStateFromInputs();
+      const err = validateState(s);
+      if (err){ showErr(err); return; }
+      const url = location.origin + location.pathname + "?" + stateToQuery(s);
+      try{
+        await navigator.clipboard.writeText(url);
+        showOk("リンクをコピーしました。");
+      }catch(e){
+        const ta = document.createElement("textarea");
+        ta.value = url;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+        showOk("リンクをコピーしました。");
+      }
+      history.replaceState(null, "", "?" + stateToQuery(s));
+    }
+
+    function exportCSV(){
+      const s = getStateFromInputs();
+      const err = validateState(s);
+      if (err){ showErr(err); return; }
+      const { N, A, B, C } = s;
+      const drawMax = N;
+
+      const rows = [];
+      const header = ["a\\b"];
+      for (let b=0; b<=drawMax; b++) header.push(String(b));
+      rows.push(header);
+
+      for (let a=0; a<=drawMax; a++){
+        const r = [String(a)];
+        for (let b=0; b<=drawMax; b++){
+          const c = N - a - b;
+          if (c < 0){
+            r.push("");
+          } else {
+            const p = winProb(N, A, B, C, a, b);
+            r.push((p*100).toFixed(3));
+          }
+        }
+        rows.push(r);
+      }
+
+      const csv = rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `lottery_easy_N${N}_A${A}_B${B}_C${C}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      showOk("CSVを出力しました。");
+    }
+
+    // modal
+    function openHelp(){ $("backdrop").style.display = "flex"; }
+    function closeHelp(){ $("backdrop").style.display = "none"; }
+
+    // Events
+    ["N","A","B","C"].forEach(id=>{
+      $(id).addEventListener("input", ()=>{ normalizeIntegerInputs(); syncMultiplierHints(); renderDebounced(); });
+      $(id).addEventListener("change", ()=>{ normalizeIntegerInputs(); syncMultiplierHints(); renderDebounced(); });
+    });
+
+    $("example").addEventListener("click", () => {
+      applyStateToInputs({ N:3, A:2, B:3, C:5 });
+      selected = { a:1, b:1 };
+      showOk("例を入力しました。");
+      render();
+    });
+    $("copyLink").addEventListener("click", copyLink);
+    $("save").addEventListener("click", saveToLocal);
+    $("reset").addEventListener("click", resetAll);
+    $("csv").addEventListener("click", exportCSV);
+
+    $("help").addEventListener("click", openHelp);
+    $("closeHelp").addEventListener("click", closeHelp);
+    $("backdrop").addEventListener("click", (e)=>{ if (e.target === $("backdrop")) closeHelp(); });
+    window.addEventListener("keydown", (e)=>{ if (e.key === "Escape") closeHelp(); });
+
+    // Init
+    (function init(){
+      const s = loadState();
+      applyStateToInputs(s);
+      render();
+    })();
+  </script>
+</body>
+</html>
